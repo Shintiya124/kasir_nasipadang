@@ -209,6 +209,7 @@ if (isset($_POST['tambahpesanan'])) {
     }
 }
 
+
 /* ==================== TAMBAH DETAIL PESANAN ==================== */
 if (isset($_POST['addmakanan'])) {
     $idmakanan = intval($_POST['idmakanan']);
@@ -236,79 +237,87 @@ if (isset($_POST['addmakanan'])) {
     }
 }
 
-/* ==================== MENU MASUK (menambah stok) ==================== */
+/* ==================== TAMBAH MENU MASUK ==================== */
 if (isset($_POST['menumasuk'])) {
+
     $idmakanan = intval($_POST['idmakanan']);
     $qty       = intval($_POST['qty']);
 
-    $caristock = mysqli_query($c,"SELECT stock FROM makanan WHERE idmakanan='$idmakanan'");
-    $caristock2 = mysqli_fetch_array($caristock);
-    $stocksekarang = intval($caristock2['stock']);
-    $newstock = $stocksekarang + $qty;
+    // Ambil stok makanan
+    $get = mysqli_query($c, "SELECT stock FROM makanan WHERE idmakanan='$idmakanan'");
+    $data = mysqli_fetch_assoc($get);
+    $stoklama = intval($data['stock']);
 
-    $insertmenumasuk = mysqli_query($c, "INSERT INTO masuk (idmakanan, qty) VALUES('$idmakanan','$qty')");
-    $updatemenumasuk = mysqli_query($c, "UPDATE makanan SET stock='$newstock' WHERE idmakanan='$idmakanan'");
+    // Hitung stok baru
+    $stokbaru = $stoklama + $qty;
 
-    if ($insertmenumasuk && $updatemenumasuk) {
-        header('location:masuk.php');
-        exit;
-    } else {
-        echo '<script>alert("Gagal menambah menu masuk: '.mysqli_error($c).'"); window.location.href="masuk.php"</script>';
-        exit;
-    }
+    // Insert tabel masuk
+    mysqli_query($c, "INSERT INTO masuk (idmakanan, qty) VALUES ('$idmakanan', '$qty')");
+
+    // Update stok makanan
+    mysqli_query($c, "UPDATE makanan SET stock='$stokbaru' WHERE idmakanan='$idmakanan'");
+
+    header("Location: masuk.php");
+    exit;
 }
 
-/* ==================== EDIT DATA MASUK (STOK) ==================== */
-if (isset($_POST['editdatamenumasuk'])) {
-    $qty = intval($_POST['qty']);
+
+/* ==================== MENU MASUK (menambah stok) ==================== */
+if (isset($_POST['editmasuk'])) {
     $idmasuk = intval($_POST['idmasuk']);
     $idmakanan = intval($_POST['idmakanan']);
+    $qty_baru = intval($_POST['qty']);
+    $qty_lama = intval($_POST['old_qty']);
 
-    $caritahu = mysqli_query($c,"SELECT * FROM masuk WHERE idmasuk='$idmasuk'");
-    $caritahu2 = mysqli_fetch_array($caritahu);
-    $qtysekarang = intval($caritahu2['qty']);
+    // Ambil stok makanan saat ini
+    $caristock = mysqli_query($c, "SELECT stock FROM makanan WHERE idmakanan='$idmakanan'");
+    $data = mysqli_fetch_assoc($caristock);
+    $stock_sekarang = intval($data['stock']);
 
-    $caristock = mysqli_query($c,"SELECT * FROM makanan WHERE idmakanan='$idmakanan'");
-    $caristock2 = mysqli_fetch_array($caristock);
-    $stocksekarang = intval($caristock2['stock']);
-
-    if($qty >= $qtysekarang){
-        $selisih = $qty - $qtysekarang;
-        $newstock = $stocksekarang + $selisih;
+    // Hitung perubahan stok
+    if ($qty_baru > $qty_lama) {
+        $selisih = $qty_baru - $qty_lama;
+        $stock_baru = $stock_sekarang + $selisih;
     } else {
-        $selisih = $qtysekarang - $qty;
-        $newstock = $stocksekarang - $selisih;
+        $selisih = $qty_lama - $qty_baru;
+        $stock_baru = $stock_sekarang - $selisih;
     }
 
-    $query1 = mysqli_query($c, "UPDATE masuk SET qty='$qty' WHERE idmasuk='$idmasuk'");
-    $query2 = mysqli_query($c, "UPDATE makanan SET stock='$newstock' WHERE idmakanan='$idmakanan'");
+    // Update tabel masuk dan tabel makanan
+    $update1 = mysqli_query($c, "UPDATE masuk SET qty='$qty_baru' WHERE idmasuk='$idmasuk'");
+    $update2 = mysqli_query($c, "UPDATE makanan SET stock='$stock_baru' WHERE idmakanan='$idmakanan'");
 
-    if($query1 && $query2){
-        header('location:masuk.php');
+    if ($update1 && $update2) {
+        echo '<script>alert("Data menu masuk berhasil diperbarui!"); window.location.href="masuk.php";</script>';
         exit;
     } else {
-        echo '<script>alert("Gagal update data masuk"); window.location.href="masuk.php"</script>';
+        echo '<script>alert("Gagal memperbarui data menu masuk: '.mysqli_error($c).'"); window.location.href="masuk.php";</script>';
         exit;
     }
 }
 
-/* ==================== HAPUS (GET & POST) ==================== */
-/* Hapus data masuk (GET) */
+
+/* ==================== HAPUS MENU MASUK ==================== */
 if (isset($_GET['hapusmasuk'])) {
+
     $idmasuk = intval($_GET['hapusmasuk']);
 
-    $ambil = mysqli_query($c, "SELECT * FROM masuk WHERE idmasuk='$idmasuk'");
-    $data  = mysqli_fetch_array($ambil);
+    // Ambil datanya
+    $get = mysqli_query($c, "SELECT * FROM masuk WHERE idmasuk='$idmasuk'");
+    $data = mysqli_fetch_assoc($get);
 
     if ($data) {
-        $idmakanan = intval($data['idmakanan']);
-        $qty       = intval($data['qty']);
+        $idmakanan = $data['idmakanan'];
+        $qty = $data['qty'];
 
+        // Kembalikan stok
         mysqli_query($c, "UPDATE makanan SET stock = stock - $qty WHERE idmakanan='$idmakanan'");
+
+        // Hapus data
         mysqli_query($c, "DELETE FROM masuk WHERE idmasuk='$idmasuk'");
     }
 
-    header('location:masuk.php');
+    header("Location: masuk.php");
     exit;
 }
 
@@ -479,30 +488,45 @@ if (isset($_POST['bayarpesanan'])) {
     $total = $data['total'] ?? 0;
 
     if ($total <= 0) {
-        echo "<script>alert('Pesanan kosong, tidak bisa diproses!'); window.location='view.php?idp=$idp';</script>";
+        echo "<script>alert('Pesanan kosong, tidak bisa diproses!'); 
+              window.location='view.php?idp=$idp';</script>";
+        exit;
+    }
+
+    if ($bayar < $total) {
+        echo "<script>alert('Uang bayar kurang!'); 
+              window.location='view.php?idp=$idp';</script>";
         exit;
     }
 
     // Hitung kembalian
     $kembalian = $bayar - $total;
 
-    if ($bayar < $total) {
-        echo "<script>alert('Uang bayar kurang!'); window.location='view.php?idp=$idp';</script>";
-        exit;
-    }
-
     // Simpan ke tabel pembayaran
-    $insert = mysqli_query($c, "INSERT INTO pembayaran (idpesanan, total, bayar, kembalian)
-                                VALUES ('$idp', '$total', '$bayar', '$kembalian')");
+    $simpan = mysqli_query($c, "INSERT INTO pembayaran (idpesanan, total, bayar, kembalian, tanggal)
+                                VALUES ('$idp', '$total', '$bayar', '$kembalian', NOW())");
 
-    if ($insert) {
-        // Update status pesanan jadi "Lunas"
-        mysqli_query($c, "UPDATE pesanan SET status='Lunas' WHERE idpesanan='$idp'");
-        echo "<script>alert('Pembayaran berhasil disimpan!'); window.location='view.php?idp=$idp';</script>";
+    if ($simpan) {
+        // Ambil ID pembayaran terakhir
+        $idpembayaran = mysqli_insert_id($c);
+
+        // Simpan juga ke tabel laporan
+        $simpanlaporan = mysqli_query($c, "INSERT INTO laporan (idpembayaran, idpesanan, total, tanggal)
+                                           VALUES ('$idpembayaran', '$idp', '$total', NOW())");
+
+        if ($simpanlaporan) {
+            echo "<script>alert('Pembayaran berhasil dan laporan ditambahkan!');
+                  window.location='view.php?idp=$idp';</script>";
+        } else {
+            echo "<script>alert('Pembayaran berhasil tapi gagal menambahkan ke laporan!');
+                  window.location='view.php?idp=$idp';</script>";
+        }
     } else {
-        echo "<script>alert('Gagal menyimpan pembayaran!'); window.location='view.php?idp=$idp';</script>";
+        echo "<script>alert('Gagal menyimpan pembayaran!');
+              window.location='view.php?idp=$idp';</script>";
     }
 }
+
 // ==================== EDIT PEMBAYARAN ====================
 if (isset($_POST['editpembayaran'])) {
     $idpembayaran = $_POST['idpembayaran'];
@@ -535,6 +559,281 @@ if (isset($_GET['hapuspembayaran'])) {
         echo "<script>alert('Gagal menghapus pembayaran'); window.location='view.php?idp=$idp';</script>";
     }
 }
+if (isset($_POST['ajaxaddmakanan'])) {
+    $idmakanan = intval($_POST['idmakanan']);
+    $idp = intval($_POST['idp']);
+    $qty = intval($_POST['qty']);
+
+    // Ambil data harga dan stok
+    $cek = mysqli_query($c, "SELECT * FROM makanan WHERE idmakanan='$idmakanan'");
+    $data = mysqli_fetch_assoc($cek);
+    $harga = intval($data['harga']);
+    $stock = intval($data['stock']);
+    $namamakanan = $data['namamakanan'];
+    $deskripsi = $data['deskripsi'];
+
+    if ($stock < $qty) {
+        echo json_encode(["status" => "error", "message" => "Stok tidak cukup!"]);
+        exit;
+    }
+
+    // Tambahkan ke detailpesanan dan kurangi stok
+    $tambah = mysqli_query($c, "INSERT INTO detailpesanan (idpesanan, idmakanan, qty) VALUES ('$idp', '$idmakanan', '$qty')");
+    $kurangistock = mysqli_query($c, "UPDATE makanan SET stock = stock - $qty WHERE idmakanan = '$idmakanan'");
+
+    if ($tambah && $kurangistock) {
+        // Ambil ulang isi tabel detail pesanan
+        $get = mysqli_query($c, "
+            SELECT dp.*, m.namamakanan, m.harga, m.deskripsi
+            FROM detailpesanan dp
+            JOIN makanan m ON dp.idmakanan = m.idmakanan
+            WHERE dp.idpesanan = '$idp'
+        ");
+        
+        $rows = "";
+        $i = 1;
+        while ($p = mysqli_fetch_assoc($get)) {
+            $iddp = $p['iddetailpesanan'];
+            $subtotal = $p['qty'] * $p['harga'];
+
+            // Setiap baris + modal edit
+            $rows .= "
+            <tr>
+                <td>{$i}</td>
+                <td>{$p['namamakanan']}</td>
+                <td>Rp" . number_format($p['harga']) . "</td>
+                <td>" . number_format($p['qty']) . "</td>
+                <td>Rp" . number_format($subtotal) . "</td>
+                <td>
+                    <button type='button' class='btn btn-warning btn-sm' data-toggle='modal' data-target='#edit{$iddp}'>Edit</button>
+                    <a href='function.php?hapusdetail={$iddp}&idp={$idp}' class='btn btn-danger btn-sm' onclick='return confirm(\"Yakin hapus item ini?\")'>Hapus</a>
+                </td>
+            </tr>
+
+            <!-- Modal Edit -->
+            <div class='modal fade' id='edit{$iddp}' tabindex='-1' role='dialog'>
+                <div class='modal-dialog' role='document'>
+                    <div class='modal-content'>
+                        <div class='modal-header'>
+                            <h5 class='modal-title'>Edit Pesanan</h5>
+                            <button type='button' class='close' data-dismiss='modal'>&times;</button>
+                        </div>
+                        <form method='post' action='function.php'>
+                            <div class='modal-body'>
+                                <label>Nama Makanan</label>
+                                <input type='text' class='form-control' value='{$p['namamakanan']}' readonly>
+                                <label class='mt-3'>Jumlah</label>
+                                <input type='number' name='qty' class='form-control' value='{$p['qty']}' min='1' required>
+                                <input type='hidden' name='iddetailpesanan' value='{$iddp}'>
+                                <input type='hidden' name='idp' value='{$idp}'>
+                            </div>
+                            <div class='modal-footer'>
+                                <button type='submit' class='btn btn-success' name='editmakananpesanan'>Simpan</button>
+                                <button type='button' class='btn btn-secondary' data-dismiss='modal'>Batal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            ";
+            $i++;
+        }
+
+        echo json_encode([
+            "status" => "success",
+            "tabel" => $rows
+        ]);
+    } else {
+        echo json_encode(["status" => "error", "message" => mysqli_error($c)]);
+    }
+
+    exit;
+}
+
+/* ==================== EDIT MAKANAN DALAM PESANAN ==================== */
+if (isset($_POST['editmakananpesanan'])) {
+    $iddetail = intval($_POST['iddetailpesanan']);
+    $idp = intval($_POST['idp']);
+    $qty_baru = intval($_POST['qty']);
+
+    // Ambil data lama
+    $cek = mysqli_query($c, "
+        SELECT dp.*, m.stock AS stok_makanan, m.idmakanan 
+        FROM detailpesanan dp 
+        JOIN makanan m ON dp.idmakanan = m.idmakanan 
+        WHERE dp.iddetailpesanan='$iddetail'
+    ");
+    $data = mysqli_fetch_assoc($cek);
+
+    if (!$data) {
+        echo "<script>alert('Data tidak ditemukan'); window.location='view.php?idp=$idp';</script>";
+        exit;
+    }
+
+    $idmakanan = intval($data['idmakanan']);
+    $qty_lama = intval($data['qty']);
+    $stok_sekarang = intval($data['stok_makanan']);
+
+    // Hitung stok baru
+    $stok_update = $stok_sekarang + $qty_lama - $qty_baru;
+    if ($stok_update < 0) {
+        echo "<script>alert('Stok tidak cukup!'); window.location='view.php?idp=$idp';</script>";
+        exit;
+    }
+
+    // Update tabel
+    $update_detail = mysqli_query($c, "UPDATE detailpesanan SET qty='$qty_baru' WHERE iddetailpesanan='$iddetail'");
+    $update_stok = mysqli_query($c, "UPDATE makanan SET stock='$stok_update' WHERE idmakanan='$idmakanan'");
+
+    if ($update_detail && $update_stok) {
+        echo "<script>alert('Pesanan berhasil diperbarui!'); window.location='view.php?idp=$idp';</script>";
+    } else {
+        echo "<script>alert('Gagal memperbarui pesanan: " . mysqli_error($c) . "'); window.location='view.php?idp=$idp';</script>";
+    }
+
+    exit;
+}
+/* =========================================================
+   EDIT MAKANAN DALAM PESANAN (AJAX)
+========================================================= */
+if (isset($_POST['ajaxeditmakanan'])) {
+    $iddetailpesanan = intval($_POST['iddetailpesanan']);
+    $idp = intval($_POST['idp']);
+    $qty = intval($_POST['qty']);
+
+    // Ambil data lama
+    $cek = mysqli_query($c, "SELECT * FROM detailpesanan WHERE iddetailpesanan='$iddetailpesanan'");
+    $dataLama = mysqli_fetch_assoc($cek);
+    $idmakanan = $dataLama['idmakanan'];
+    $qtyLama = $dataLama['qty'];
+
+    // Ambil stok
+    $cekStok = mysqli_query($c, "SELECT stock FROM makanan WHERE idmakanan='$idmakanan'");
+    $stokData = mysqli_fetch_assoc($cekStok);
+    $stokSekarang = $stokData['stock'];
+
+    // Hitung selisih
+    $selisih = $qty - $qtyLama;
+    if ($stokSekarang < $selisih) {
+        echo json_encode(["status" => "error", "message" => "Stok tidak cukup untuk update jumlah!"]);
+        exit;
+    }
+
+    // Update qty
+    $update = mysqli_query($c, "UPDATE detailpesanan SET qty='$qty' WHERE iddetailpesanan='$iddetailpesanan'");
+    $updateStok = mysqli_query($c, "UPDATE makanan SET stock=stock-$selisih WHERE idmakanan='$idmakanan'");
+
+    if ($update && $updateStok) {
+        // Ambil ulang seluruh isi tabel
+        $get = mysqli_query($c, "
+            SELECT dp.*, m.namamakanan, m.harga, m.deskripsi
+            FROM detailpesanan dp
+            JOIN makanan m ON dp.idmakanan = m.idmakanan
+            WHERE dp.idpesanan='$idp'
+        ");
+
+        $i = 1;
+        $rows = "";
+
+        while ($p = mysqli_fetch_assoc($get)) {
+            $subtotal = $p['qty'] * $p['harga'];
+            $rows .= "
+                <tr>
+                    <td>{$i}</td>
+                    <td>{$p['namamakanan']}</td>
+                    <td>Rp" . number_format($p['harga']) . "</td>
+                    <td>" . number_format($p['qty']) . "</td>
+                    <td>Rp" . number_format($subtotal) . "</td>
+                    <td>
+                        <button type='button' class='btn btn-warning btn-sm' data-toggle='modal' data-target='#edit{$p['iddetailpesanan']}'>Edit</button>
+                        <a href='function.php?hapusdetail={$p['iddetailpesanan']}&idp={$idp}' class='btn btn-danger btn-sm'>Hapus</a>
+                    </td>
+                </tr>
+
+                <!-- Modal Edit -->
+                <div class='modal fade' id='edit{$p['iddetailpesanan']}' tabindex='-1' role='dialog'>
+                    <div class='modal-dialog' role='document'>
+                        <div class='modal-content'>
+                            <div class='modal-header'>
+                                <h5 class='modal-title'>Edit Pesanan</h5>
+                                <button type='button' class='close' data-dismiss='modal'>&times;</button>
+                            </div>
+                            <form method='post' class='formEditMenu'>
+                                <div class='modal-body'>
+                                    <label>Nama Makanan</label>
+                                    <input type='text' class='form-control' value='{$p['namamakanan']}' readonly>
+
+                                    <label class='mt-3'>Jumlah</label>
+                                    <input type='number' name='qty' class='form-control' value='{$p['qty']}' min='1' required>
+
+                                    <input type='hidden' name='iddetailpesanan' value='{$p['iddetailpesanan']}'>
+                                    <input type='hidden' name='idp' value='{$idp}'>
+                                </div>
+                                <div class='modal-footer'>
+                                    <button type='submit' class='btn btn-success'>Simpan</button>
+                                    <button type='button' class='btn btn-secondary' data-dismiss='modal'>Batal</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            ";
+            $i++;
+        }
+
+        echo json_encode([
+            "status" => "success",
+            "tabel" => $rows
+        ]);
+    } else {
+        echo json_encode(["status" => "error", "message" => mysqli_error($c)]);
+    }
+
+    exit;
+}
+if(isset($_GET['getTotalDanBayar'])){
+    $idp = $_GET['idp'];
+    
+    // Hitung total
+    $gettotal = mysqli_query($c, "SELECT SUM(m.harga * dp.qty) as total 
+                                  FROM detailpesanan dp 
+                                  JOIN makanan m ON dp.idmakanan = m.idmakanan 
+                                  WHERE dp.idpesanan='$idp'");
+    $t = mysqli_fetch_assoc($gettotal);
+    $total = $t['total'] ?? 0;
+
+    // Ambil tabel pembayaran
+    $getbayar = mysqli_query($c, "SELECT * FROM pembayaran WHERE idpesanan='$idp'");
+    $html = "";
+    if(mysqli_num_rows($getbayar) > 0){
+        while($b = mysqli_fetch_assoc($getbayar)){
+            $html .= "<tr>
+                <td>{$b['tanggal']}</td>
+                <td>Rp".number_format($b['total'])."</td>
+                <td>Rp".number_format($b['bayar'])."</td>
+                <td>Rp".number_format($b['kembalian'])."</td>
+                <td>
+                    <button class='btn btn-warning btn-sm'><i class='fas fa-edit'></i></button>
+                    <button class='btn btn-danger btn-sm'><i class='fas fa-trash'></i></button>
+                </td>
+            </tr>";
+        }
+    } else {
+        $html = "<tr><td colspan='5' align='center'>Belum ada pembayaran</td></tr>";
+    }
+
+    echo json_encode([
+        "total" => $total,
+        "totalFormatted" => number_format($total, 0, ',', '.'),
+        "tabelPembayaran" => $html
+    ]);
+    exit;
+}
+
+
+
+
+
 
 
 ?>

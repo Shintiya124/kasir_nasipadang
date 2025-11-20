@@ -116,17 +116,17 @@ require 'ceklogin.php';
                                         </tr>
 
                                         <!-- Modal EDIT -->
-                                        <div class="modal fade" id="modalEdit<?=$idmasuk;?>" tabindex="-1" role="dialog" aria-labelledby="modalEditLabel<?=$idmasuk;?>" aria-hidden="true">
-                                          <div class="modal-dialog" role="document">
-                                            <div class="modal-content">
-                                              <form method="post" action="function.php">
-                                                <div class="modal-header">
-                                                  <h5 class="modal-title" id="modalEditLabel<?=$idmasuk;?>">Edit Menu Masuk</h5>
-                                                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                  </button>
-                                                </div>
-                                                <div class="modal-body">
+                                            <div class="modal fade" id="modalEdit<?=$idmasuk;?>" tabindex="-1" role="dialog" aria-labelledby="modalEditLabel<?=$idmasuk;?>" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                <form method="post" action="function.php">
+                                                    <div class="modal-header">
+                                                    <h5 class="modal-title" id="modalEditLabel<?=$idmasuk;?>">Edit Menu Masuk</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                    </div>
+                                                    <div class="modal-body">
                                                     <p><strong><?=htmlspecialchars($namamakanan);?></strong></p>
                                                     <div class="form-group">
                                                         <label>Jumlah (qty)</label>
@@ -135,15 +135,16 @@ require 'ceklogin.php';
                                                     <input type="hidden" name="idmasuk" value="<?=$idmasuk;?>">
                                                     <input type="hidden" name="idmakanan" value="<?=$idmakanan;?>">
                                                     <input type="hidden" name="old_qty" value="<?=$qty;?>">
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                    <button type="submit" name="editmasuk" class="btn btn-success">Simpan</button>
+                                                    <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
+                                                    </div>
+                                                </form>
                                                 </div>
-                                                <div class="modal-footer">
-                                                  <button type="submit" name="editmasuk" class="btn btn-success">Simpan</button>
-                                                  <button type="button" class="btn btn-danger" data-dismiss="modal">Tutup</button>
-                                                </div>
-                                              </form>
                                             </div>
-                                          </div>
-                                        </div>
+                                            </div>
+
 
                                     <?php
                                     } // end while

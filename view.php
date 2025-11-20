@@ -162,7 +162,7 @@ if (isset($_GET['idp'])) {
                                                             <h5 class="modal-title">Edit Pesanan</h5>
                                                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                                                         </div>
-                                                        <form method="post" action="function.php">
+                                                        <form method='post' class='formEditMenu'>
                                                             <div class="modal-body">
                                                                 <label>Nama Makanan</label>
                                                                 <input type="text" class="form-control" value="<?= $namamakanan; ?>" readonly>
@@ -174,10 +174,11 @@ if (isset($_GET['idp'])) {
                                                                 <input type="hidden" name="idp" value="<?= $idp; ?>">
                                                             </div>
                                                             <div class="modal-footer">
-                                                                <button type="submit" class="btn btn-success" name="editmakananpesanan">Simpan</button>
+                                                                <button type="submit" class="btn btn-success">Simpan</button>
                                                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                                                             </div>
                                                         </form>
+
                                                     </div>
                                                 </div>
                                             </div>
@@ -197,31 +198,43 @@ if (isset($_GET['idp'])) {
 
                                 </table>
                                 <!-- 🔥 Form Pembayaran -->
-                                    <div class="card mb-4">
-                                        <div class="card-header bg-success text-white">
-                                            <i class="fas fa-money-bill-wave"></i> Pembayaran
-                                        </div>
-                                        <div class="card-body">
-                                            <form method="post" action="function.php">
-                                                <div class="form-group">
-                                                    <label>Total Tagihan</label>
-                                                    <input type="text" class="form-control" id="total" value="<?= $total; ?>" readonly>
-                                                </div>
-                                                <div class="form-group mt-3">
-                                                    <label>Uang Bayar</label>
-                                                    <input type="number" class="form-control" name="bayar" id="bayar" placeholder="Masukkan nominal uang" required>
-                                                </div>
-                                                <div class="form-group mt-3">
-                                                    <label>Kembalian</label>
-                                                    <input type="text" class="form-control" id="kembalian" readonly>
-                                                </div>
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="fas fa-money-bill-wave"></i> Pembayaran
+    </div>
+    <div class="card-body">
+        <form method="post" action="function.php">
+            <div class="form-group">
+                <label>Total Tagihan</label>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
+                    <input type="text" class="form-control" id="total" value="<?= number_format($total, 0, ',', '.'); ?>" readonly>
+                </div>
+            </div>
 
-                                                <input type="hidden" name="idp" value="<?= $idp; ?>">
-                                                
-                                                <button type="submit" class="btn btn-success mt-3" name="bayarpesanan">Simpan Pembayaran</button>
-                                            </form>
-                                        </div>
-                                    </div>
+            <div class="form-group mt-3">
+                <label>Uang Bayar</label>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
+                    <input type="number" class="form-control" name="bayar" id="bayar" placeholder="Masukkan nominal uang" required>
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label>Kembalian</label>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
+                    <input type="text" class="form-control" id="kembalian" readonly>
+                </div>
+            </div>
+
+            <input type="hidden" name="idp" value="<?= $idp; ?>">
+            
+            <button type="submit" class="btn btn-success mt-3" name="bayarpesanan">Simpan Pembayaran</button>
+        </form>
+    </div>
+</div>
+
                                     <!-- 🔥 Tabel Riwayat Pembayaran -->
 <div class="card mt-4">
     <div class="card-header bg-info text-white">
@@ -238,20 +251,20 @@ if (isset($_GET['idp'])) {
                     <th>Aksi</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="dataRiwayatPembayaran">
                 <?php
                 $getbayar = mysqli_query($c, "SELECT * FROM pembayaran WHERE idpesanan='$idp'");
                 if (mysqli_num_rows($getbayar) > 0) {
                     while ($b = mysqli_fetch_assoc($getbayar)) {
                         $idpembayaran = $b['idpembayaran'];
-                        $total = $b['total'];
+                        $totalBayar = $b['total'];
                         $bayar = $b['bayar'];
                         $kembalian = $b['kembalian'];
                         $tanggal = $b['tanggal'];
                 ?>
                         <tr>
                             <td><?= $tanggal; ?></td>
-                            <td>Rp<?= number_format($total); ?></td>
+                            <td>Rp<?= number_format($totalBayar); ?></td>
                             <td>Rp<?= number_format($bayar); ?></td>
                             <td>Rp<?= number_format($kembalian); ?></td>
                             <td>
@@ -316,18 +329,6 @@ if (isset($_GET['idp'])) {
     </div>
 </div>
 
-<!-- 🔧 Script Otomatis Hitung Kembalian -->
-<script>
-function hitungKembalian(id) {
-    const total = parseInt(document.querySelector(`#editbayar${id} input[name='total']`).value) || 0;
-    const bayar = parseInt(document.getElementById(`bayar${id}`).value) || 0;
-    const kembalianField = document.getElementById(`kembalian${id}`);
-    const hasil = bayar - total;
-
-    kembalianField.value = hasil >= 0 ? hasil : 0;
-}
-</script>
-
 
                             </div>
                         </div>
@@ -350,28 +351,129 @@ function hitungKembalian(id) {
     </div>
 
     <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
     <script src="js/scripts.js"></script>
     <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
     <script src="assets/demo/datatables-demo.js"></script>
-    <script>
-document.getElementById('bayar').addEventListener('input', function() {
-    const total = parseInt(document.getElementById('total').value) || 0;
-    const bayar = parseInt(this.value) || 0;
-    const kembalianInput = document.getElementById('kembalian');
+    
+<!-- 🔧 Script Otomatis Hitung Kembalian (dengan format Rupiah) -->
+<script>
+$(document).on('input', '#bayar', function() {
+    // Ambil nilai total dan bayar
+    const totalText = $('#total').val().replace(/\./g, '').replace(/[^\d]/g, '');
+    const total = parseInt(totalText) || 0;
+    const bayar = parseInt($(this).val()) || 0;
 
-    if (bayar < total) {
-        kembalianInput.value = 'Uang kurang Rp' + (total - bayar).toLocaleString('id-ID');
-        kembalianInput.style.color = 'red';
+    // Hitung kembalian
+    const kembalian = bayar - total;
+
+    // Format ke Rupiah
+    const formatRupiah = (angka) => {
+        return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
+
+    // Tampilkan hasil
+    $('#kembalian').val(kembalian >= 0 ? formatRupiah(kembalian) : "0");
+});
+</script>
+    <script>
+$(document).ready(function(){
+
+    // ================= TAMBAH MENU =================
+    $("#formTambahMenu").on('submit', function(e){
+        e.preventDefault();
+
+        const $btn = $(this).find("button[type='submit']");
+        $btn.prop('disabled', true).text('Mengirim...');
+
+        $.ajax({
+            type: "POST",
+            url: "function.php",
+            data: $(this).serialize() + "&ajaxaddmakanan=1",
+            dataType: 'json',
+            success: function(res){
+                if(res.status === "success"){
+                    $("#dataTable tbody").html(res.tabel);
+                    $("#myModal").modal('hide');
+                    updateTotal();
+                    alert("Menu berhasil ditambahkan!");
+                } else {
+                    alert("Gagal: " + (res.message || "Kesalahan tidak diketahui"));
+                }
+            },
+            error: function(xhr, status, error){
+                console.error("AJAX Error:", status, error);
+                alert("Terjadi kesalahan pada server.");
+            },
+            complete: function(){
+                $btn.prop('disabled', false).text('Submit');
+            }
+        });
+    });
+
+    // ================= EDIT MENU =================
+    $(document).on('submit', '.formEditMenu', function(e){
+        e.preventDefault();
+
+        const $form = $(this);
+        const $btn = $form.find("button[type='submit']");
+        $btn.prop('disabled', true).text('Menyimpan...');
+
+        $.ajax({
+            type: "POST",
+            url: "function.php",
+            data: $form.serialize() + "&ajaxeditmakanan=1",
+            dataType: 'json',
+            success: function(res){
+    if(res.status === "success"){
+        $("#dataTable tbody").html(res.tabel);
+        $(".modal").modal('hide');
+        updateTotal();
+
+        // 🔥 Tambahan: refresh total & riwayat setelah sukses
+        $.get("function.php", {getTotalDanBayar: 1, idp: $("#idp").val()}, function(data){
+            const hasil = JSON.parse(data);
+            $("#total").val(hasil.totalFormatted);
+            $("#dataRiwayatPembayaran").html(hasil.tabelPembayaran);
+        });
+
+        alert("Jumlah makanan berhasil diubah!");
     } else {
-        const kembalian = bayar - total;
-        kembalianInput.value = 'Rp' + kembalian.toLocaleString('id-ID');
-        kembalianInput.style.color = 'black';
+        alert("Gagal: " + (res.message || "Kesalahan tidak diketahui"));
+    }
+},
+            error: function(xhr, status, error){
+                console.error("AJAX Error:", status, error);
+                alert("Terjadi kesalahan pada server.");
+            },
+            complete: function(){
+                $btn.prop('disabled', false).text('Simpan');
+            }
+        });
+    });
+    
+
+    // ================= UPDATE TOTAL =================
+    function updateTotal(){
+        let total = 0;
+        $("#dataTable tbody tr").each(function(){
+            const subtotalText = $(this).find("td:nth-child(5)").text().replace(/[^\d]/g, '');
+            const subtotal = parseInt(subtotalText) || 0;
+            total += subtotal;
+        });
+        $("#dataTable tfoot td:last").text("Rp" + total.toLocaleString("id-ID"));
+        $("#total").val(total.toLocaleString("id-ID"));
+
     }
 });
 </script>
+
+
+
+
+
 
 
 </body>
@@ -386,36 +488,28 @@ document.getElementById('bayar').addEventListener('input', function() {
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
             
-            <form method="post" action="function.php">
+            <form id="formTambahMenu" method="post">
                 <div class="modal-body">
                     <label for="idmakanan">Pilih menu</label>
-                    <select name="idmakanan" class="form-control" required>
+                    <select name="idmakanan" id="idmakanan" class="form-control" required>
                         <?php
                         $getmakanan = mysqli_query($c, "SELECT * FROM makanan");
-                        if (mysqli_num_rows($getmakanan) == 0) {
-                            echo '<option disabled>Tidak ada menu tersedia</option>';
-                        } else {
-                            while ($pl = mysqli_fetch_array($getmakanan)) {
-                                $namamakanan = $pl['namamakanan'];
-                                $deskripsi   = $pl['deskripsi'];
-                                $idmakanan   = $pl['idmakanan'];
-                                $stock       = $pl['stock'];
-
-                                echo '<option value="' . $idmakanan . '">' . $namamakanan . ' - ' . $deskripsi . ' (stock: ' . $stock . ')</option>';
-                            }
+                        while ($pl = mysqli_fetch_array($getmakanan)) {
+                            echo '<option value="'.$pl['idmakanan'].'">'.$pl['namamakanan'].' - '.$pl['deskripsi'].' (stock: '.$pl['stock'].')</option>';
                         }
                         ?>
                     </select>
 
-                    <input type="number" name="qty" class="form-control mt-4" placeholder="Jumlah" min="1" required>
-                    <input type="hidden" name="idp" value="<?= $idp; ?>">
+                    <input type="number" name="qty" id="qty" class="form-control mt-4" placeholder="Jumlah" min="1" required>
+                    <input type="hidden" name="idp" id="idp" value="<?= $idp; ?>">
                 </div>
                 
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success" name="addmakanan">Submit</button>
+                    <button type="submit" class="btn btn-success">Submit</button>
                     <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
                 </div>
-            </form>     
+            </form> 
+                
         </div>
     </div>
 </div>
